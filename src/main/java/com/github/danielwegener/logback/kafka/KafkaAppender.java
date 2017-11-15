@@ -36,8 +36,10 @@ public class KafkaAppender<E> extends KafkaAppenderConfig<E> {
             if (!DeliveryStrategySupport.INSTANCE.isOff()){
                 if(DeliveryStrategySupport.INSTANCE.getFailCount().incrementAndGet() >= DeliveryStrategySupport.INSTANCE.getFailOffCount()) {
                     DeliveryStrategySupport.INSTANCE.setOff(true);
-                    DeliveryStrategySupport.INSTANCE.setLastFailOffTime(System.currentTimeMillis());
                 }
+            }
+            if (throwable != null){
+                DeliveryStrategySupport.INSTANCE.setLastFailOffTime(System.currentTimeMillis());
             }
             aai.appendLoopOnAppenders(evt);
         }
