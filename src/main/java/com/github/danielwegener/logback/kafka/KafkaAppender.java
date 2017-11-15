@@ -3,6 +3,7 @@ package com.github.danielwegener.logback.kafka;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.spi.AppenderAttachableImpl;
+import com.github.danielwegener.logback.kafka.delivery.DeliveryStrategySupport;
 import com.github.danielwegener.logback.kafka.delivery.FailedDeliveryCallback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
@@ -32,6 +33,12 @@ public class KafkaAppender<E> extends KafkaAppenderConfig<E> {
     private final FailedDeliveryCallback<E> failedDeliveryCallback = new FailedDeliveryCallback<E>() {
         @Override
         public void onFailedDelivery(E evt, Throwable throwable) {
+            if (!DeliveryStrategySupport.INSTANCE.isOff()){
+                if(DeliveryStrategySupport.INSTANCE.getFailCount().incrementAndGet() >= DeliveryStrategySupport.INSTANCE.getFailOffCount()) {
+                    DeliveryStrategySupport.INSTANCE.setOff(true);
+                    DeliveryStrategySupport.INSTANCE.setLastFailOffTime(System.currentTimeMillis());
+                }
+            }
             aai.appendLoopOnAppenders(evt);
         }
     };
@@ -115,7 +122,11 @@ public class KafkaAppender<E> extends KafkaAppenderConfig<E> {
         final byte[] payload = encoder.doEncode(e);
         final byte[] key = keyingStrategy.createKey(e);
         final ProducerRecord<byte[], byte[]> record = new ProducerRecord<byte[],byte[]>(topic, key, payload);
-        deliveryStrategy.send(lazyProducer.get(), record, e, failedDeliveryCallback);
+        if (!DeliveryStrategySupport.INSTANCE.isOff() || (System.currentTimeMillis() - DeliveryStrategySupport.INSTANCE.getLastFailOffTime()) > DeliveryStrategySupport.INSTANCE.getFailOverTime()){
+            deliveryStrategy.send(lazyProducer.get(), record, e, failedDeliveryCallback);
+        }else {
+            failedDeliveryCallback.onFailedDelivery(e,null);
+        }
     }
 
     protected Producer<byte[], byte[]> createProducer() {

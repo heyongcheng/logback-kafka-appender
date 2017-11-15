@@ -20,6 +20,13 @@ public class AsynchronousDeliveryStrategy implements DeliveryStrategy {
                 public void onCompletion(RecordMetadata metadata, Exception exception) {
                     if (exception != null) {
                         failedDeliveryCallback.onFailedDelivery(event, exception);
+                    }else {
+                        if (DeliveryStrategySupport.INSTANCE.isOff()){
+                            DeliveryStrategySupport.INSTANCE.setOff(false);
+                        }
+                        if (DeliveryStrategySupport.INSTANCE.getFailCount().get() > 0) {
+                            DeliveryStrategySupport.INSTANCE.getFailCount().set(0);
+                        }
                     }
                 }
             });
