@@ -21,9 +21,6 @@ public class AsynchronousDeliveryStrategy implements DeliveryStrategy {
                     if (exception != null) {
                         failedDeliveryCallback.onFailedDelivery(event, exception);
                     }else {
-                        if (DeliveryStrategySupport.INSTANCE.isOff()){
-                            DeliveryStrategySupport.INSTANCE.setOff(false);
-                        }
                         if (DeliveryStrategySupport.INSTANCE.getFailCount().get() > 0) {
                             DeliveryStrategySupport.INSTANCE.getFailCount().set(0);
                         }

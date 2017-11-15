@@ -28,9 +28,6 @@ public class BlockingDeliveryStrategy extends ContextAwareBase implements Delive
             final Future<RecordMetadata> future = producer.send(record);
             if (timeout > 0L) future.get(timeout, TimeUnit.MILLISECONDS);
             else if (timeout == 0) future.get();
-            if (DeliveryStrategySupport.INSTANCE.isOff()){
-                DeliveryStrategySupport.INSTANCE.setOff(false);
-            }
             if (DeliveryStrategySupport.INSTANCE.getFailCount().get() > 0) {
                 DeliveryStrategySupport.INSTANCE.getFailCount().set(0);
             }

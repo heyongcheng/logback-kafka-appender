@@ -8,10 +8,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DeliveryStrategySupport {
 
     public static DeliveryStrategySupport INSTANCE = new DeliveryStrategySupport();
-    /**
-     * 关闭状态
-     */
-    private volatile boolean off;
 
     /**
      * 连续失败次数
@@ -39,14 +35,6 @@ public class DeliveryStrategySupport {
 
     public void setFailCount(AtomicInteger failCount) {
         this.failCount = failCount;
-    }
-
-    public boolean isOff() {
-        return off;
-    }
-
-    public void setOff(boolean off) {
-        this.off = off;
     }
 
     public int getFailOffCount() {

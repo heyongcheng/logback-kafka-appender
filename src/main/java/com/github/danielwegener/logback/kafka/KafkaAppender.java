@@ -33,11 +33,8 @@ public class KafkaAppender<E> extends KafkaAppenderConfig<E> {
     private final FailedDeliveryCallback<E> failedDeliveryCallback = new FailedDeliveryCallback<E>() {
         @Override
         public void onFailedDelivery(E evt, Throwable throwable) {
-            if (!DeliveryStrategySupport.INSTANCE.isOff()){
-                if(DeliveryStrategySupport.INSTANCE.getFailCount().incrementAndGet() >= DeliveryStrategySupport.INSTANCE.getFailOffCount()) {
-                    DeliveryStrategySupport.INSTANCE.setOff(true);
-                }
-            }
+            /** 失败次数++ **/
+            DeliveryStrategySupport.INSTANCE.getFailCount().incrementAndGet();
             if (throwable != null){
                 DeliveryStrategySupport.INSTANCE.setLastFailOffTime(System.currentTimeMillis());
             }
@@ -124,7 +121,8 @@ public class KafkaAppender<E> extends KafkaAppenderConfig<E> {
         final byte[] payload = encoder.doEncode(e);
         final byte[] key = keyingStrategy.createKey(e);
         final ProducerRecord<byte[], byte[]> record = new ProducerRecord<byte[],byte[]>(topic, key, payload);
-        if (!DeliveryStrategySupport.INSTANCE.isOff() || (System.currentTimeMillis() - DeliveryStrategySupport.INSTANCE.getLastFailOffTime()) > DeliveryStrategySupport.INSTANCE.getFailOverTime()){
+        if (DeliveryStrategySupport.INSTANCE.getFailCount().get() < DeliveryStrategySupport.INSTANCE.getFailOffCount()
+                || (System.currentTimeMillis() - DeliveryStrategySupport.INSTANCE.getLastFailOffTime()) > DeliveryStrategySupport.INSTANCE.getFailOverTime()){
             deliveryStrategy.send(lazyProducer.get(), record, e, failedDeliveryCallback);
         }else {
             failedDeliveryCallback.onFailedDelivery(e,null);
