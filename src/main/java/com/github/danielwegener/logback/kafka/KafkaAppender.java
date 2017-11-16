@@ -34,9 +34,10 @@ public class KafkaAppender<E> extends KafkaAppenderConfig<E> {
         @Override
         public void onFailedDelivery(E evt, Throwable throwable) {
             /** 失败次数++ **/
-            DeliveryStrategySupport.INSTANCE.getFailCount().incrementAndGet();
             if (throwable != null){
-                DeliveryStrategySupport.INSTANCE.setLastFailOffTime(System.currentTimeMillis());
+                if (DeliveryStrategySupport.INSTANCE.getFailCount().incrementAndGet() >= DeliveryStrategySupport.INSTANCE.getFailOffCount()) {
+                    DeliveryStrategySupport.INSTANCE.reconnect();
+                }
             }
             aai.appendLoopOnAppenders(evt);
         }
@@ -121,8 +122,7 @@ public class KafkaAppender<E> extends KafkaAppenderConfig<E> {
         final byte[] payload = encoder.doEncode(e);
         final byte[] key = keyingStrategy.createKey(e);
         final ProducerRecord<byte[], byte[]> record = new ProducerRecord<byte[],byte[]>(topic, key, payload);
-        if (DeliveryStrategySupport.INSTANCE.getFailCount().get() < DeliveryStrategySupport.INSTANCE.getFailOffCount()
-                || (System.currentTimeMillis() - DeliveryStrategySupport.INSTANCE.getLastFailOffTime()) > DeliveryStrategySupport.INSTANCE.getFailOverTime()){
+        if (DeliveryStrategySupport.INSTANCE.getFailCount().get() < DeliveryStrategySupport.INSTANCE.getFailOffCount()){
             deliveryStrategy.send(lazyProducer.get(), record, e, failedDeliveryCallback);
         }else {
             failedDeliveryCallback.onFailedDelivery(e,null);
@@ -173,6 +173,15 @@ public class KafkaAppender<E> extends KafkaAppenderConfig<E> {
             Producer<byte[], byte[]> producer = null;
             try {
                 producer = createProducer();
+                long timeout = 0;
+                Object requestTimeout = producerConfig.get("request.timeout.ms");
+                if (requestTimeout != null) {
+                    try {
+                        timeout = Long.parseLong(String.valueOf(requestTimeout));
+                    }catch (Exception e){
+                    }
+                }
+                DeliveryStrategySupport.INSTANCE.execute(producer,topic,timeout);
             } catch (Exception e) {
                 addError("error creating producer", e);
             }
