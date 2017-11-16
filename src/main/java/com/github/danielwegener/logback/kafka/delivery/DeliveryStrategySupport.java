@@ -1,5 +1,6 @@
 package com.github.danielwegener.logback.kafka.delivery;
 
+import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -111,9 +112,14 @@ public class DeliveryStrategySupport {
                     semaphore.acquire();
                     while (DeliveryStrategySupport.INSTANCE.getFailCount().get() >= DeliveryStrategySupport.INSTANCE.getFailOffCount()) {
                         try {
-                            Future<RecordMetadata> future = producer.send(new ProducerRecord<byte[], byte[]>(topic,null,System.currentTimeMillis(),null,value));
-                            future.get(requestTimeout, TimeUnit.MICROSECONDS);
-                            DeliveryStrategySupport.INSTANCE.getFailCount().set(0);
+                            producer.send(new ProducerRecord<byte[], byte[]>(topic, null, System.currentTimeMillis(), null, value), new Callback() {
+                                @Override
+                                public void onCompletion(RecordMetadata recordMetadata, Exception e) {
+                                    if (e == null){
+                                        DeliveryStrategySupport.INSTANCE.getFailCount().set(0);
+                                    }
+                                }
+                            });
                         }catch (Exception e){
                             try {
                                 Thread.sleep(3000);
