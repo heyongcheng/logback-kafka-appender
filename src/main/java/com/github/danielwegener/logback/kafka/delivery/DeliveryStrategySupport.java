@@ -121,6 +121,8 @@ public class DeliveryStrategySupport {
                                 }
                             });
                         }catch (Exception e){
+
+                        }finally {
                             try {
                                 Thread.sleep(3000);
                             } catch (InterruptedException e1) {
