@@ -94,7 +94,7 @@ public class KafkaAppenderTest {
 
     @Test
     public void testAppend() {
-        when(encoder.doEncode(any(ILoggingEvent.class))).thenReturn(new byte[]{0x00, 0x00});
+        when(encoder.doEncode(any(ILoggingEvent.class),false)).thenReturn(new byte[]{0x00, 0x00});
         unit.start();
         final LoggingEvent evt = new LoggingEvent("fqcn",ctx.getLogger("logger"), Level.ALL, "message", null, new Object[0]);
         unit.append(evt);
@@ -103,7 +103,7 @@ public class KafkaAppenderTest {
 
     @Test
     public void testDeferredAppend() {
-        when(encoder.doEncode(any(ILoggingEvent.class))).thenReturn(new byte[]{0x00, 0x00});
+        when(encoder.doEncode(any(ILoggingEvent.class),false)).thenReturn(new byte[]{0x00, 0x00});
         unit.start();
         final LoggingEvent deferredEvent = new LoggingEvent("fqcn",ctx.getLogger("org.apache.kafka.clients.logger"), Level.ALL, "deferred message", null, new Object[0]);
         unit.doAppend(deferredEvent);

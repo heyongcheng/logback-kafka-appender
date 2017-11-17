@@ -119,7 +119,7 @@ public class KafkaAppender<E> extends KafkaAppenderConfig<E> {
 
     @Override
     protected void append(E e) {
-        final byte[] payload = encoder.doEncode(e);
+        final byte[] payload = encoder.doEncode(e, isWrap());
         final byte[] key = keyingStrategy.createKey(e);
         final ProducerRecord<byte[], byte[]> record = new ProducerRecord<byte[],byte[]>(topic, key, payload);
         if (DeliveryStrategySupport.INSTANCE.getFailCount().get() < DeliveryStrategySupport.INSTANCE.getFailOffCount()){

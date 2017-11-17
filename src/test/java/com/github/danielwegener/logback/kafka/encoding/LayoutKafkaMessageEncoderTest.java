@@ -37,7 +37,7 @@ public class LayoutKafkaMessageEncoderTest {
         layout.start();
         final Logger logger = ctx.getLogger("logger");
         final LoggingEvent evt = new LoggingEvent("fqcn", logger, Level.ALL,"message", null, new Object[0]);
-        assertThat(unit.doEncode(evt), equalTo("prefix message".getBytes()));
+        assertThat(unit.doEncode(evt,false), equalTo("prefix message".getBytes()));
     }
 
     @Test

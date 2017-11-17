@@ -11,7 +11,9 @@ public interface KafkaMessageEncoder<E> {
     /**
      * Encodes a loggingEvent into a byte array.
      * @param event the loggingEvent to be encoded.
+     * @param wrap
+     * @return
      */
-    byte[] doEncode(E event);
+    byte[] doEncode(E event, boolean wrap);
 
 }

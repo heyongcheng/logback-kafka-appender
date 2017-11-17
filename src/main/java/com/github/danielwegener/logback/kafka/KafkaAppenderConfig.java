@@ -4,6 +4,7 @@ import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import ch.qos.logback.core.spi.AppenderAttachable;
 import com.github.danielwegener.logback.kafka.delivery.BlockingDeliveryStrategy;
 import com.github.danielwegener.logback.kafka.delivery.DeliveryStrategy;
+import com.github.danielwegener.logback.kafka.encoding.EventFieldsWrapper;
 import com.github.danielwegener.logback.kafka.encoding.KafkaMessageEncoder;
 import com.github.danielwegener.logback.kafka.keying.KeyingStrategy;
 import com.github.danielwegener.logback.kafka.keying.RoundRobinKeyingStrategy;
@@ -20,6 +21,12 @@ import java.util.Set;
 public abstract class KafkaAppenderConfig<E> extends UnsynchronizedAppenderBase<E> implements AppenderAttachable<E> {
 
     protected String topic = null;
+
+    protected String app = null;
+
+    protected String source = null;
+
+    protected boolean wrap;
 
     protected KafkaMessageEncoder<E> encoder = null;
     protected KeyingStrategy<? super E> keyingStrategy = null;
@@ -95,7 +102,37 @@ public abstract class KafkaAppenderConfig<E> extends UnsynchronizedAppenderBase<
             deliveryStrategy = new BlockingDeliveryStrategy();
         }
 
+        if (source == null){
+            addError("No [logging.file] set for RollingFileAppender");
+            errorFree = false;
+        }
+
+        if (isWrap()) {
+            EventFieldsWrapper.setSource(source);
+            if (app != null && !"".equals(app)) {
+                EventFieldsWrapper.setApp(app);
+            } else if (source != null) {
+                EventFieldsWrapper.setApp(getDefaultApp(source));
+                addInfo("No app set for the appender named [\"" + name + "\"]. Using source: [" + EventFieldsWrapper.getApp() + "] as app");
+            }
+        }
+
         return errorFree;
+    }
+
+    private String getDefaultApp(String source) {
+        int indexEnd = source.lastIndexOf(".");
+        if (indexEnd > -1){
+            source = source.substring(0, indexEnd);
+        }
+        int indexStart = source.lastIndexOf("/");
+        if (indexStart == -1) {
+            indexStart = source.lastIndexOf("\\");
+        }
+        if (indexStart > -1) {
+            source = source.substring(indexStart + 1);
+        }
+        return source;
     }
 
     public void setEncoder(KafkaMessageEncoder<E> layout) {
@@ -104,6 +141,30 @@ public abstract class KafkaAppenderConfig<E> extends UnsynchronizedAppenderBase<
 
     public void setTopic(String topic) {
         this.topic = topic;
+    }
+
+    public String getApp() {
+        return app;
+    }
+
+    public void setApp(String app) {
+        this.app = app;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public boolean isWrap() {
+        return wrap;
+    }
+
+    public void setWrap(boolean wrap) {
+        this.wrap = wrap;
     }
 
     public void setKeyingStrategy(KeyingStrategy<? super E> keyingStrategy) {

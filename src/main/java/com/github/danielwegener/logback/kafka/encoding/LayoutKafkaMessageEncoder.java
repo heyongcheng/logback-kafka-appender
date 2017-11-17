@@ -33,8 +33,11 @@ public class LayoutKafkaMessageEncoder<E> extends KafkaMessageEncoderBase<E> {
     }
 
     @Override
-    public byte[] doEncode(E event) {
+    public byte[] doEncode(E event, boolean wrap) {
         final String message = layout.doLayout(event);
+        if (wrap) {
+            return EventFieldsWrapper.wrap(message).getBytes(charset);
+        }
         return message.getBytes(charset);
     }
 

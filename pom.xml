@@ -115,7 +115,11 @@
             <version>1.9.5</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.36</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -175,10 +179,10 @@
                     </archive>
                 </configuration>
             </plugin>
-            <plugin>
+            <!--<plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.10.1</version>
+                <version>2.10.4</version>
                 <executions>
                     <execution>
                         <goals>
@@ -186,7 +190,7 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
+            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -228,5 +232,30 @@
             </plugin>
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <id>Sumpay</id>
+            <name>Sumpay Repository</name>
+            <url>http://192.168.8.240:8081/nexus/content/groups/public/</url>
+        </repository>
+    </repositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>Sumpay</id>
+            <name>Sumpay Repository</name>
+            <url>http://192.168.8.240:8081/nexus/content/groups/public/</url>
+        </pluginRepository>
+    </pluginRepositories>
+    <distributionManagement>
+        <repository>
+            <id>Sumpay-releases</id>
+            <url>http://192.168.8.240:8081/nexus/content/repositories/releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>Sumpay-snapshots</id>
+            <url>http://192.168.8.240:8081/nexus/content/repositories/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
 </project>
 
