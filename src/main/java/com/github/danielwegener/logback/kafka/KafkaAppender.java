@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
+
 /**
  * @since 0.0.1
  */
@@ -28,6 +30,7 @@ public class KafkaAppender<E> extends KafkaAppenderConfig<E> {
     private static final String KAFKA_LOGGER_PREFIX = "org.apache.kafka.clients";
 
     private LazyProducer lazyProducer = null;
+    private boolean kafkaAppendEnable = false;
     private final AppenderAttachableImpl<E> aai = new AppenderAttachableImpl<E>();
     private final ConcurrentLinkedQueue<E> queue = new ConcurrentLinkedQueue<E>();
     private final FailedDeliveryCallback<E> failedDeliveryCallback = new FailedDeliveryCallback<E>() {
@@ -62,7 +65,13 @@ public class KafkaAppender<E> extends KafkaAppenderConfig<E> {
     @Override
     public void start() {
         // only error free appenders should be activated
-        if (!checkPrerequisites()) return;
+        Object bootstrapServers = producerConfig.get(BOOTSTRAP_SERVERS_CONFIG);
+        if (bootstrapServers != null && bootstrapServers.toString().trim().length() > 0) {
+            if (!checkPrerequisites()) {
+                return;
+            }
+            kafkaAppendEnable = true;
+        }
 
         lazyProducer = new LazyProducer();
 
@@ -119,12 +128,16 @@ public class KafkaAppender<E> extends KafkaAppenderConfig<E> {
 
     @Override
     protected void append(E e) {
-        final byte[] payload = encoder.doEncode(e, isWrap());
-        final byte[] key = keyingStrategy.createKey(e);
-        final ProducerRecord<byte[], byte[]> record = new ProducerRecord<byte[],byte[]>(topic, key, payload);
-        if (DeliveryStrategySupport.INSTANCE.getFailCount().get() < DeliveryStrategySupport.INSTANCE.getFailOffCount()){
-            deliveryStrategy.send(lazyProducer.get(), record, e, failedDeliveryCallback);
-        }else {
+        if (kafkaAppendEnable) {
+            final byte[] payload = encoder.doEncode(e, isWrap());
+            final byte[] key = keyingStrategy.createKey(e);
+            final ProducerRecord<byte[], byte[]> record = new ProducerRecord<byte[],byte[]>(topic, key, payload);
+            if (DeliveryStrategySupport.INSTANCE.getFailCount().get() < DeliveryStrategySupport.INSTANCE.getFailOffCount()){
+                deliveryStrategy.send(lazyProducer.get(), record, e, failedDeliveryCallback);
+            }else {
+                failedDeliveryCallback.onFailedDelivery(e,null);
+            }
+        } else {
             failedDeliveryCallback.onFailedDelivery(e,null);
         }
     }
